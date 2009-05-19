@@ -16,6 +16,8 @@ class Calculator
 
     if (is_expression_numeric?(equation))
       eval(equation)
+    else
+      raise RuntimeError.new("Equation to run contains non-numeric values: '#{equation}'")
     end
   end
 

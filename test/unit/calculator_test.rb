@@ -4,19 +4,6 @@ class CalculatorTest < Test::Unit::TestCase
 
   FIXTURE = 'sample'
 
-  #{{
-  #  calculator
-  #    equation:  (x + y) / (a * 2)
-  #    terms:
-  #    - term: x
-  #      mql: select MAX('estimate') where 'type' = story and 'iteration' = ('current iteration')
-  #    - term: y
-  #      mql: select COUNT(*) where 'type' = 'iteration'
-  #    - term: a
-  #      mql: select 'velocity' where 'type' = 'release' and numbers in (72)
-  #}}
-
-
   def test_macro_contents
     params = {:equation => '1 + 1',
             :terms => []}
@@ -60,6 +47,18 @@ class CalculatorTest < Test::Unit::TestCase
     assert result == 3
   end
 
+  def test_copes_with_terms_containing_numbers
+    params = {:equation => 'a1 * a2',
+            :terms => [ {:term => 'a1', :mql => "select 2"},
+                        {:term => 'a2', :mql => "select 3"}]}
+    project = project(FIXTURE)
+    project.expects(:execute_mql).with("select 2").returns(2)
+    project.expects(:execute_mql).with("select 3").returns(3)
+    calculator = Calculator.new(params, project, nil)
+    result = calculator.execute
+    assert result == 6
+  end
+
   def test_calculates_with_similar_variable_names
     params = {:equation => 'art + dart + artistic',
             :terms => [ {:term => 'art', :mql => "select 2"},
@@ -86,13 +85,18 @@ class CalculatorTest < Test::Unit::TestCase
     assert result == 15
   end
 
-  def test_cannot_use_equations_to_run_arbitary_ruby_code
+  def test_throws_exception_if_equation_contains_non_numeric_expressions
     params = {:equation => 'naughty',
             :terms => [ {:term => 'naughty', :mql => "select table_value"}]}
     project = project(FIXTURE)
     project.expects(:execute_mql).with("select table_value").returns("Dir.pwd")
+
     Dir.expects(:pwd).never
-    calculator = Calculator.new(params, project, nil)
-    calculator.execute
+
+    exception = assert_raise(RuntimeError) do
+      calculator = Calculator.new(params, project, nil)
+      calculator.execute
+    end
+    assert_equal("Equation to run contains non-numeric values: 'Dir.pwd'", exception.message)
   end
 end
