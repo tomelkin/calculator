@@ -4,92 +4,72 @@ class CalculatorTest < Test::Unit::TestCase
 
   FIXTURE = 'sample'
 
-  def test_macro_contents
-    params = {:equation => '1 + 1',
-            :terms => []}
-    calculator = Calculator.new(params, project(FIXTURE), nil)
-    result = calculator.execute
-    assert result
+  def test_add
+    verify_count_calculator('a + b', {'a' => 96, 'b' => 6}, 102)
   end
 
-  def test_add_mql_results
-    params = {:equation => 'a + b',
-            :terms => [ {:term => 'a', :mql => "select 2"},
-                    {:term => 'b', :mql => "select 3"}]}
-    project = project(FIXTURE)
-    project.expects(:execute_mql).with("select 2").returns(2)
-    project.expects(:execute_mql).with("select 3").returns(3)
-    calculator = Calculator.new(params, project, nil)
-    result = calculator.execute
-    assert result == 5
-
+  def test_subtract
+    verify_count_calculator('a - b', {'a' => 96, 'b' => 6}, 90)
   end
 
-  def test_add_mql_results
-    params = {:equation => 'a / (b - c)',
-            :terms => [ {:term => 'a', :mql => "select 99"},
-                    {:term => 'b', :mql => "select 17"},
-                    {:term => 'c', :mql => "select 6"}]}
-    project = project(FIXTURE)
-    project.expects(:execute_mql).with("select 99").returns(99)
-    project.expects(:execute_mql).with("select 17").returns(17)
-    project.expects(:execute_mql).with("select 6").returns(6)
-    calculator = Calculator.new(params, project, nil)
-    result = calculator.execute
-    assert result == 9
+  def test_divide
+    verify_count_calculator('a / b', {'a' => 96, 'b' => 6}, 16)
+  end
+
+  def test_multiply
+    verify_count_calculator('a * b', {'a' => 96, 'b' => 6}, 576)
+  end
+
+  def test_modulus
+    verify_count_calculator('a % b', {'a' => 17, 'b' => 5}, 2)
   end
 
   def test_adds_numbers
-    params = {:equation => '1 + 2',
-            :terms => []}
-    calculator = Calculator.new(params, project(FIXTURE), nil)
-    result = calculator.execute
-    assert result == 3
+    verify_count_calculator('20 + 5', {}, 25)
   end
 
   def test_copes_with_terms_containing_numbers
-    params = {:equation => 'a1 * a2',
-            :terms => [ {:term => 'a1', :mql => "select 2"},
-                        {:term => 'a2', :mql => "select 3"}]}
-    project = project(FIXTURE)
-    project.expects(:execute_mql).with("select 2").returns(2)
-    project.expects(:execute_mql).with("select 3").returns(3)
-    calculator = Calculator.new(params, project, nil)
-    result = calculator.execute
-    assert result == 6
+    verify_count_calculator('a1 * a2', {'a1' => 2, 'a2' => 3}, 6)
   end
 
   def test_calculates_with_similar_variable_names
-    params = {:equation => 'art + dart + artistic',
-            :terms => [ {:term => 'art', :mql => "select 2"},
-                    {:term => 'dart', :mql => "select 3"},
-                    {:term => 'artistic', :mql => "select 4"}]}
-    project = project(FIXTURE)
-    project.expects(:execute_mql).with("select 2").returns(2)
-    project.expects(:execute_mql).with("select 3").returns(3)
-    project.expects(:execute_mql).with("select 4").returns(4)
-    calculator = Calculator.new(params, project, nil)
-    result = calculator.execute
-    assert result == 9
+    verify_count_calculator('art + dart + artistic', {'art' => 2, 'dart' => 3, 'artistic' => 4}, 9)
   end
 
   def test_works_with_brackets
-    params = {:equation => '(art + dart) * dart',
-            :terms => [ {:term => 'art', :mql => "select 2"},
-                    {:term => 'dart', :mql => "select 3"}]}
+    verify_count_calculator('(art + dart) * dart', {'art' => 2, 'dart' => 3}, 15)
+  end
+
+  def test_throws_exception_if_mql_returns_more_than_one_result
+    query = "select 'planning estimate' where type='story'"
+    params = {'equation' => 'a',
+            'terms' => [ {'term' => 'a', 'mql' => query}]}
     project = project(FIXTURE)
-    project.expects(:execute_mql).with("select 2").returns(2)
-    project.expects(:execute_mql).with("select 3").returns(3)
+    project.expects(:execute_mql).with(query).returns([{'Planning Estimate' => '2'}, {'Planning Estimate' => '3'}])
+    calculator = Calculator.new(params, project, nil)
+    exception = assert_raise(RuntimeError) do
+      calculator.execute
+    end
+    assert_equal("Equation term evaluated to give more than one result, should just evaluate to a number: '#{query}'", exception.message)
+  end
+
+  def test_gets_first_returned_value_for_mql_queries
+    query = "Select SUM('planning estimate') where type = 'story'"
+    params = {'equation' => 'x * 2',
+            'terms' => [ {'term' => 'x', 'mql' => query}]
+    }
+    project = project(FIXTURE)
+    project.expects(:execute_mql).with(query).returns([{'Sum Planning Estimate' => '76.0000000000'}])
     calculator = Calculator.new(params, project, nil)
     result = calculator.execute
-    assert result == 15
+    assert result == 152
   end
 
   def test_throws_exception_if_equation_contains_non_numeric_expressions
-    params = {:equation => 'naughty',
-            :terms => [ {:term => 'naughty', :mql => "select table_value"}]}
+    params = {'equation' => 'naughty',
+            'terms' => [ {'term' => 'naughty', 'mql' => "Select 'name' where number = 123"}]}
     project = project(FIXTURE)
-    project.expects(:execute_mql).with("select table_value").returns("Dir.pwd")
+    project.expects(:execute_mql).with("Select 'name' where number = 123").returns([{"name" => "Dir.pwd"}])
 
     Dir.expects(:pwd).never
 
@@ -98,5 +78,20 @@ class CalculatorTest < Test::Unit::TestCase
       calculator.execute
     end
     assert_equal("Equation to run contains non-numeric values: 'Dir.pwd'", exception.message)
+  end
+
+  private
+
+  def verify_count_calculator(equation, terms, expected_result)
+    project = project(FIXTURE)
+    params = {'equation' => equation, 'terms' => []}
+    terms.each do |term, value|
+      mql_statement = "select count(*) where name = '#{term}'"
+      project.expects(:execute_mql).with(mql_statement).returns([{'Count ' => "#{value}"}])
+      params['terms'] << {'term' => term, 'mql' => mql_statement}
+    end
+
+    calculator = Calculator.new(params, project, nil)
+    assert calculator.execute == expected_result
   end
 end
