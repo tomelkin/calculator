@@ -1,3 +1,5 @@
+# Calculator #
+## Calculator ## 
 Simple macro to allow users to write basic arithmetic expressions comprised of MQL statements.
 
 Once installed the calculator macro can be used like follows:
