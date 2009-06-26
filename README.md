@@ -1,21 +1,19 @@
-# Calculator #
-## Calculator ## 
+# Calculator
+
 Simple macro to allow users to write basic arithmetic expressions comprised of MQL statements.
 
 Once installed the calculator macro can be used like follows:
 
-<pre><code>
-{{
-  calculator
-    equation: a * (b + 3) % 5
-    terms:
-      - term: a
-        mql: select COUNT(*) where 'type' = 'iteration'
-      - term: b
-        mql: select MAX('planning estimate') where type = story
+    {{
+      calculator
+        equation: a * (b + 3) % 5
+        terms:
+          - term: a
+            mql: select COUNT(*) where 'type' = 'iteration'
+          - term: b
+            mql: select MAX('planning estimate') where type = story
 
-}}
-</code></pre>
+    }}
 
 * Supported arithmetic operators: + - * / % ( )
 * Any valid symbol name in Ruby can be used for a term identifier.  Any number of terms can be used in an equation.

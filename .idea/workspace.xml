@@ -3,6 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" readonly="true" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.md" afterPath="$PROJECT_DIR$/README.md" />
     </list>
     <ignored path="calculator.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -50,7 +51,7 @@
       <file leaf-file-name="README.md" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/README.md">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="15" column="16" selection-start="397" selection-end="397" vertical-scroll-proportion="0.23255815">
+            <state line="6" column="4" selection-start="177" selection-end="177" vertical-scroll-proportion="0.093023255">
               <folding />
             </state>
           </provider>
@@ -358,7 +359,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="15" column="16" selection-start="397" selection-end="397" vertical-scroll-proportion="0.23255815">
+        <state line="6" column="4" selection-start="177" selection-end="177" vertical-scroll-proportion="0.093023255">
           <folding />
         </state>
       </provider>
